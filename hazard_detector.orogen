@@ -1,0 +1,17 @@
+name "hazard_detector"
+
+import_types_from "hazard_detectorTypes.hpp"
+
+using_library "hazard_detector"
+import_types_from "base"
+
+task_context "Task" do
+    needs_configuration
+
+    input_port "distance_frame", "/base/samples/DistanceImage"
+
+    output_port "hazard_detected", "bool"
+
+    port_driven "distance_frame"
+end
+
