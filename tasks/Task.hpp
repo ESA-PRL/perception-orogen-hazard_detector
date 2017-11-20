@@ -5,7 +5,7 @@
 
 #include "hazard_detector/TaskBase.hpp"
 
-namespace hazard_detection {
+namespace hazard_detector {
     class HazardDetector;
 
     class Task : public TaskBase
