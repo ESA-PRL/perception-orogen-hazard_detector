@@ -1,5 +1,3 @@
-/* Generated from orogen/lib/orogen/templates/tasks/Task.hpp */
-
 #ifndef HAZARD_DETECTOR_TASK_TASK_HPP
 #define HAZARD_DETECTOR_TASK_TASK_HPP
 
@@ -12,7 +10,7 @@ namespace hazard_detector {
 
     class Task : public TaskBase
     {
-	friend class TaskBase;
+    friend class TaskBase;
     protected:
         HazardDetector* hazardDetector;
         base::samples::DistanceImage distanceImage; // used to compute location of hazards

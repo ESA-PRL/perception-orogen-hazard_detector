@@ -1,5 +1,3 @@
-/* Generated from orogen/lib/orogen/templates/tasks/Task.cpp */
-
 #include "Task.hpp"
 
 using namespace hazard_detector;
@@ -16,6 +14,7 @@ Task::Task(std::string const& name, RTT::ExecutionEngine* engine)
 
 Task::~Task()
 {
+    delete hazardDetector;
 }
 
 bool Task::configureHook()
@@ -40,8 +39,12 @@ void Task::updateHook()
     if (_distance_frame.read(distanceImage) == RTT::NewData)
     {
         _camera_frame.read(cameraFrame);
-        std::pair< bool, std::vector<uint8_t> > res = hazardDetector->analyze(distanceImage.data, cameraFrame.image);
-        // cameraFrame.image = res.second;
+
+        cv::Mat visualImage = frame_helper::FrameHelper::convertToCvMat(cameraFrame);
+        std::pair< uint16_t, uint16_t > distDims = {distanceImage.height, distanceImage.width};
+        std::pair< bool, cv::Mat > res = hazardDetector->analyze(distanceImage.data, distDims, visualImage);
+        frame_helper::FrameHelper::copyMatToFrame(res.second, cameraFrame);
+
         _hazard_detected.write( res.first );
         _hazard_visualization.write( cameraFrame );
     }
