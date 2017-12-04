@@ -4,5 +4,8 @@ templates/*
 .*.swp
 build/*
 
+*.log
+*.idx
+
 *autobuild-stamp
 
