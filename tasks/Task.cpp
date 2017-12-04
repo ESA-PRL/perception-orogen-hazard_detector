@@ -19,14 +19,13 @@ Task::~Task()
 {
 }
 
-/// The following lines are template definitions for the various state machine
-// hooks defined by Orocos::RTT. See Task.hpp for more detailed
-// documentation about them.
-
 bool Task::configureHook()
 {
     if (! TaskBase::configureHook())
         return false;
+
+    hazardDetector = new HazardDetector();
+
     return true;
 }
 bool Task::startHook()
@@ -38,6 +37,15 @@ bool Task::startHook()
 void Task::updateHook()
 {
     TaskBase::updateHook();
+
+    if (_distance_frame.read(distanceImage) == RTT::NewData)
+    {
+        _camera_frame.read(cameraFrame);
+        std::pair< bool, std::vector<uint8_t> > res = hazardDetector->analyze(distanceImage.data, cameraFrame.image);
+        // cameraFrame.image = res.second;
+        _hazard_detected.write( res.first );
+        _hazard_visualization.write( cameraFrame );
+    }
 }
 void Task::errorHook()
 {
