@@ -1,7 +1,6 @@
 /* Generated from orogen/lib/orogen/templates/tasks/Task.cpp */
 
 #include "Task.hpp"
-#include <hazard_detector/HazardDetector.hpp>
 
 using namespace hazard_detector;
 

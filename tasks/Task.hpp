@@ -6,9 +6,9 @@
 #include "hazard_detector/TaskBase.hpp"
 #include "frame_helper/FrameHelper.h"
 #include <opencv2/core/mat.hpp>
+#include <hazard_detector/HazardDetector.hpp>
 
 namespace hazard_detector {
-    class HazardDetector;
 
     class Task : public TaskBase
     {
