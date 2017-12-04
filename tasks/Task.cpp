@@ -42,10 +42,11 @@ void Task::updateHook()
 
         cv::Mat visualImage = frame_helper::FrameHelper::convertToCvMat(cameraFrame);
         std::pair< uint16_t, uint16_t > distDims = {distanceImage.height, distanceImage.width};
-        std::pair< bool, cv::Mat > res = hazardDetector->analyze(distanceImage.data, distDims, visualImage);
-        frame_helper::FrameHelper::copyMatToFrame(res.second, cameraFrame);
+        bool obstacleDetected = hazardDetector->analyze(distanceImage.data, distDims, visualImage);
+        //frame_helper::FrameHelper::copyMatToFrame(res.second, cameraFrame);
+        cameraFrame = cvMatToFrame(visualImage);
 
-        _hazard_detected.write( res.first );
+        _hazard_detected.write( obstacleDetected );
         _hazard_visualization.write( cameraFrame );
     }
 }
@@ -60,4 +61,17 @@ void Task::stopHook()
 void Task::cleanupHook()
 {
     TaskBase::cleanupHook();
+}
+
+base::samples::frame::Frame Task::cvMatToFrame(cv::Mat cvmat)
+{
+    cv::normalize(cvmat, cvmat, 0, 255, cv::NORM_MINMAX, CV_8UC1);
+    cv::cvtColor(cvmat, cvmat, cv::COLOR_BGR2RGB);
+
+    base::samples::frame::Frame frame(
+            cvmat.rows, cvmat.cols, 8,
+            base::samples::frame::MODE_GRAYSCALE );
+    frame_helper::FrameHelper::copyMatToFrame(cvmat, frame);
+
+    return frame;
 }

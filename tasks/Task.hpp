@@ -15,6 +15,7 @@ namespace hazard_detector {
         HazardDetector* hazardDetector;
         base::samples::DistanceImage distanceImage; // used to compute location of hazards
         base::samples::frame::Frame cameraFrame;    // used to visualize location of hazards
+        base::samples::frame::Frame cvMatToFrame(cv::Mat);
 
     public:
         Task(std::string const& name = "hazard_detector::Task");
