@@ -3,6 +3,7 @@ name "hazard_detector"
 import_types_from "hazard_detectorTypes.hpp"
 
 using_library "hazard_detector"
+using_library "frame_helper"
 import_types_from "hazard_detector/Config.hpp"
 import_types_from "base"
 

@@ -4,6 +4,8 @@
 #define HAZARD_DETECTOR_TASK_TASK_HPP
 
 #include "hazard_detector/TaskBase.hpp"
+#include "frame_helper/FrameHelper.h"
+#include <opencv2/core/mat.hpp>
 
 namespace hazard_detector {
     class HazardDetector;
