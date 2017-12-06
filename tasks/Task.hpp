@@ -22,6 +22,7 @@ namespace hazard_detector {
         int calibrate(const base::samples::DistanceImage&);
         void writeCalibrationFile();
 
+        hazard_detector::Config config;
         int numCalibrationSamples;
         int curCalibrationSample;
         std::string calibrationPath;

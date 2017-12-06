@@ -22,12 +22,14 @@ bool Task::configureHook()
     if (! TaskBase::configureHook())
         return false;
 
-    hazardDetector = new HazardDetector();
+    this->config = _config.get();
 
-    calibrationPath = "hazcalib.txt";
-    numCalibrationSamples = 10;
+    hazardDetector = new HazardDetector(config);
+
+    calibrationPath = config.calibrationPath;
+    numCalibrationSamples = config.numCalibrationSamples;
     curCalibrationSample = 0;
-    newCalibration = true;
+    newCalibration = config.newCalibration;
     writeCalibration = false;
 
     return true;
@@ -147,7 +149,7 @@ int Task::calibrate(const base::samples::DistanceImage &distanceImage)
 
 void Task::writeCalibrationFile()
 {
-    std::ofstream calibOut(calibrationPath);
+    std::ofstream calibOut(config.calibrationPath);
     for (unsigned int i = 0; i < calibration.size(); i++)
     {
         for (unsigned int j = 0; j < calibration[i].size(); j++)
