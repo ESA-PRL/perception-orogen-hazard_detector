@@ -6,6 +6,7 @@ build/*
 
 *.log
 *.idx
+logs/
 
 *autobuild-stamp
 
