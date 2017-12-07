@@ -26,7 +26,6 @@ namespace hazard_detector {
         int curCalibrationSample;
         std::string calibrationPath;
         bool newCalibration;
-        bool writeCalibration;
         std::vector< std::vector<int> > sampleCountPerPixel;
         std::vector< std::vector<float> > calibration;
 

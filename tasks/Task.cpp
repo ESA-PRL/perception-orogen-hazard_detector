@@ -30,7 +30,6 @@ bool Task::configureHook()
     numCalibrationSamples = config.numCalibrationSamples;
     curCalibrationSample = 0;
     newCalibration = config.newCalibration;
-    writeCalibration = false;
 
     return true;
 }
@@ -48,21 +47,19 @@ void Task::updateHook()
     {
         _camera_frame.read(cameraFrame);
 
+        // do we need to calibrate or can we just load a calibration?
         if (newCalibration)
         {
             if (calibrate(distanceImage) == numCalibrationSamples)
             {
                 newCalibration = false;
-                writeCalibration = true;
+                hazardDetector->setCalibration(calibration);
+                hazardDetector->saveCalibrationFile(calibrationPath);
             }
         }
-
-        if (writeCalibration)
+        else if (!hazardDetector->isCalibrated())
         {
-            hazardDetector->saveCalibrationFile(calibrationPath);
-            writeCalibration = false;
-            //hazardDetector->readCalibration(calibrationPath);
-            hazardDetector->setCalibration(calibration);
+            hazardDetector->readCalibrationFile(calibrationPath);
         }
 
         if (!newCalibration)
