@@ -20,7 +20,6 @@ namespace hazard_detector {
         base::samples::frame::Frame cameraFrame;    // used to visualize location of hazards
         base::samples::frame::Frame cvMatToFrame(cv::Mat);
         int calibrate(const base::samples::DistanceImage&);
-        void writeCalibrationFile();
 
         hazard_detector::Config config;
         int numCalibrationSamples;

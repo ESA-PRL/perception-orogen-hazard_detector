@@ -59,7 +59,7 @@ void Task::updateHook()
 
         if (writeCalibration)
         {
-            writeCalibrationFile();
+            hazardDetector->saveCalibrationFile(calibrationPath);
             writeCalibration = false;
             //hazardDetector->readCalibration(calibrationPath);
             hazardDetector->setCalibration(calibration);
@@ -145,18 +145,4 @@ int Task::calibrate(const base::samples::DistanceImage &distanceImage)
         }
     }
     return curCalibrationSample;
-}
-
-void Task::writeCalibrationFile()
-{
-    std::ofstream calibOut(config.calibrationPath);
-    for (unsigned int i = 0; i < calibration.size(); i++)
-    {
-        for (unsigned int j = 0; j < calibration[i].size(); j++)
-        {
-            calibOut << calibration[i][j] << ",";
-        }
-        calibOut << "\n";
-    }
-    calibOut.close();
 }
