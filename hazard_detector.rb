@@ -43,17 +43,8 @@ Bundles.run 'camera_bb2::Task' => 'camera_bb2', 'stereo::Task' => 'stereo', 'haz
     stereo_bb2.start
     hazard_detector.start
 
-    log_replay.step
-
-    while !log_replay.eof? do
-        if reader.read_new then
-            log_replay.step
-            # print log_replay.sample_index
-            # print ' over '
-            # puts log_replay.size
-        else
-            sleep 0.01
-        end
-    end
+    Vizkit.display hazard_detector.hazard_visualization
+    Vizkit.control log_replay
+    Vizkit.exec
 
 end
