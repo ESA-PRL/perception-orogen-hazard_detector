@@ -34,7 +34,7 @@ Bundles.run 'camera_bb2::Task' => 'camera_bb2', 'stereo::Task' => 'stereo', 'haz
     log_replay.camera_firewire_bb2.frame.connect_to camera_bb2.frame_in
     camera_bb2.left_frame.connect_to                stereo_bb2.left_frame
     camera_bb2.right_frame.connect_to               stereo_bb2.right_frame
-    camera_bb2.left_frame.connect_to                hazard_detector.camera_frame
+    stereo_bb2.left_frame_sync.connect_to           hazard_detector.camera_frame
     stereo_bb2.distance_frame.connect_to            hazard_detector.distance_frame
 
     reader = camera_bb2.right_frame.reader
