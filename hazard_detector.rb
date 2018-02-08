@@ -20,7 +20,7 @@ Bundles.run 'camera_bb2::Task' => 'camera', 'stereo::Task' => 'stereo', 'hazard_
     camera.configure
 
     hazard_detector = Orocos.name_service.get 'hazard_detector'
-    Orocos.conf.apply(hazard_detector, ['default'], :override => true)
+    Orocos.conf.apply(hazard_detector, ['bb2'], :override => true)
     hazard_detector.configure
 
     if ARGV.size == 0 then
