@@ -1,0 +1,11 @@
+sudo: required
+language: ruby
+
+services:
+    - docker
+
+before_install:
+    - docker pull gerdes/rock:compiled
+
+script:
+    - docker run -it gerdes/rock:compiled bash -c ". env.sh && aup && amake perception/orogen/hazard_detector"
