@@ -1,4 +1,5 @@
 # Hazard Detector
+[![Build Status](https://travis-ci.org/ESA-PRL/perception-orogen-hazard_detector.svg?branch=master)](https://travis-ci.org/ESA-PRL/perception-orogen-hazard_detector)
 
 The hazard detector analyzes an input distance image, compares it to a calibration matrix and outputs whether it detected a hazard.
 This can be used to let a rover stop in case there is an obstacle just in front.
