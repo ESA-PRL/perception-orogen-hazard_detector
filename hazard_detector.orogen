@@ -17,6 +17,7 @@ task_context "Task" do
 
     output_port "hazard_detected", "bool"
     output_port "hazard_visualization", "/base/samples/frame/Frame"
+    output_port "local_traversability", "/base/samples/frame/Frame"
 
     port_driven "camera_frame"
 end
