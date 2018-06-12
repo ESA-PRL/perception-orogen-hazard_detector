@@ -67,6 +67,9 @@ void Task::updateHook()
             std::pair< uint16_t, uint16_t > distDims = {distanceImage.height, distanceImage.width};
             cv::Mat visualImage = frame_helper::FrameHelper::convertToCvMat(cameraFrame);
             bool obstacleDetected = hazardDetector->analyze(distanceImage.data, distDims, visualImage);
+
+            base::Time cur_time = base::Time::now();
+
             if (obstacleDetected)
             {
                 std::vector<uint8_t> trav_map = hazardDetector->getTraversabilityMap();
@@ -74,11 +77,15 @@ void Task::updateHook()
                 int trav_map_width  = hazardDetector->getTravMapDims();
                 base::samples::frame::Frame trav_frame(trav_map_height, trav_map_width, base::samples::frame::MODE_GRAYSCALE);
                 trav_frame.setImage(trav_map);
+                trav_frame.time = cur_time;
+                trav_frame.received_time = cur_time;
                 _local_traversability.write(trav_frame);
             }
 
             //frame_helper::FrameHelper::copyMatToFrame(res.second, cameraFrame);
             cameraFrame = cvMatToFrame(visualImage);
+            cameraFrame.time = cur_time;
+            cameraFrame.received_time = cur_time;
 
             _hazard_detected.write( obstacleDetected );
             _hazard_visualization.write( cameraFrame );
