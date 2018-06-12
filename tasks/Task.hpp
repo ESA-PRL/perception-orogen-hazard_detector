@@ -15,18 +15,18 @@ namespace hazard_detector {
     {
     friend class TaskBase;
     protected:
-        HazardDetector* hazardDetector;
-        base::samples::DistanceImage distanceImage; // used to compute location of hazards
-        base::samples::frame::Frame cameraFrame;    // used to visualize location of hazards
+        HazardDetector* hazard_detector;
+        base::samples::DistanceImage distance_image; // used to compute location of hazards
+        base::samples::frame::Frame camera_frame;    // used to visualize location of hazards
         base::samples::frame::Frame cvMatToFrame(cv::Mat);
         int calibrate(const base::samples::DistanceImage&);
 
         hazard_detector::Config config;
-        int numCalibrationSamples;
-        int curCalibrationSample;
-        std::string calibrationPath;
-        bool newCalibration;
-        std::vector< std::vector<int> > sampleCountPerPixel;
+        int num_calibration_samples;
+        int cur_calibration_sample;
+        std::string calibration_path;
+        bool new_calibration;
+        std::vector< std::vector<int> > sample_count_per_pixel;
         std::vector< std::vector<float> > calibration;
 
     public:

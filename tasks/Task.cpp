@@ -14,7 +14,7 @@ Task::Task(std::string const& name, RTT::ExecutionEngine* engine)
 
 Task::~Task()
 {
-    delete hazardDetector;
+    delete hazard_detector;
 }
 
 bool Task::configureHook()
@@ -24,12 +24,12 @@ bool Task::configureHook()
 
     this->config = _config.get();
 
-    hazardDetector = new HazardDetector(config);
+    hazard_detector = new HazardDetector(config);
 
-    calibrationPath = config.calibrationPath;
-    numCalibrationSamples = config.numCalibrationSamples;
-    curCalibrationSample = 0;
-    newCalibration = config.newCalibration;
+    calibration_path = config.calibrationPath;
+    num_calibration_samples = config.numCalibrationSamples;
+    cur_calibration_sample = 0;
+    new_calibration = config.newCalibration;
 
     return true;
 }
@@ -43,52 +43,52 @@ void Task::updateHook()
 {
     TaskBase::updateHook();
 
-    if (_distance_frame.read(distanceImage) == RTT::NewData)
+    if (_distance_frame.read(distance_image) == RTT::NewData)
     {
-        _camera_frame.read(cameraFrame);
+        _camera_frame.read(camera_frame);
 
         // do we need to calibrate or can we just load a calibration?
-        if (newCalibration)
+        if (new_calibration)
         {
-            if (calibrate(distanceImage) == numCalibrationSamples)
+            if (calibrate(distance_image) == num_calibration_samples)
             {
-                newCalibration = false;
-                hazardDetector->setCalibration(calibration);
-                hazardDetector->saveCalibrationFile(calibrationPath);
+                new_calibration = false;
+                hazard_detector->setCalibration(calibration);
+                hazard_detector->saveCalibrationFile(calibration_path);
             }
         }
-        else if (!hazardDetector->isCalibrated())
+        else if (!hazard_detector->isCalibrated())
         {
-            hazardDetector->readCalibrationFile(calibrationPath);
+            hazard_detector->readCalibrationFile(calibration_path);
         }
 
-        if (!newCalibration)
+        if (!new_calibration)
         {
-            std::pair< uint16_t, uint16_t > distDims = {distanceImage.height, distanceImage.width};
-            cv::Mat visualImage = frame_helper::FrameHelper::convertToCvMat(cameraFrame);
-            bool obstacleDetected = hazardDetector->analyze(distanceImage.data, distDims, visualImage);
+            std::pair< uint16_t, uint16_t > dist_dims = {distance_image.height, distance_image.width};
+            cv::Mat visual_image = frame_helper::FrameHelper::convertToCvMat(camera_frame);
+            bool obstacle_detected = hazard_detector->analyze(distance_image.data, dist_dims, visual_image);
 
             base::Time cur_time = base::Time::now();
 
-            if (obstacleDetected)
+            if (obstacle_detected)
             {
-                std::vector<uint8_t> trav_map = hazardDetector->getTraversabilityMap();
-                int trav_map_height = hazardDetector->getTravMapDims();
-                int trav_map_width  = hazardDetector->getTravMapDims();
-                base::samples::frame::Frame trav_frame(trav_map_height, trav_map_width, base::samples::frame::MODE_GRAYSCALE);
+                std::vector<uint8_t> trav_map = hazard_detector->getTraversabilityMap();
+                int height = hazard_detector->getTravMapDims();
+                int width  = hazard_detector->getTravMapDims();
+                base::samples::frame::Frame trav_frame(height, width, base::samples::frame::MODE_GRAYSCALE);
                 trav_frame.setImage(trav_map);
                 trav_frame.time = cur_time;
                 trav_frame.received_time = cur_time;
                 _local_traversability.write(trav_frame);
             }
 
-            //frame_helper::FrameHelper::copyMatToFrame(res.second, cameraFrame);
-            cameraFrame = cvMatToFrame(visualImage);
-            cameraFrame.time = cur_time;
-            cameraFrame.received_time = cur_time;
+            //frame_helper::FrameHelper::copyMatToFrame(res.second, camera_frame);
+            camera_frame = cvMatToFrame(visual_image);
+            camera_frame.time = cur_time;
+            camera_frame.received_time = cur_time;
 
-            _hazard_detected.write( obstacleDetected );
-            _hazard_visualization.write( cameraFrame );
+            _hazard_detected.write( obstacle_detected );
+            _hazard_visualization.write( camera_frame );
         }
     }
 }
@@ -118,45 +118,45 @@ base::samples::frame::Frame Task::cvMatToFrame(cv::Mat cvmat)
     return frame;
 }
 
-int Task::calibrate(const base::samples::DistanceImage &distanceImage)
+int Task::calibrate(const base::samples::DistanceImage &distance_image)
 {
-    curCalibrationSample++;
+    cur_calibration_sample++;
 
     // initialize matrices if necessary
     if (calibration.size() == 0)
     {
-        std::vector<float> initValCalib(distanceImage.width, NAN);
-        calibration.resize(distanceImage.height, initValCalib);
+        std::vector<float> init_val_calib(distance_image.width, NAN);
+        calibration.resize(distance_image.height, init_val_calib);
 
-        std::vector<int> initValCount(distanceImage.width, 0);
-        sampleCountPerPixel.resize(distanceImage.height, initValCount);
+        std::vector<int> init_val_count(distance_image.width, 0);
+        sample_count_per_pixel.resize(distance_image.height, init_val_count);
     }
 
     // add current readings to calibration matrix,
     // average in last sample
-    for (int i = 0; i < distanceImage.height; i++)
+    for (int i = 0; i < distance_image.height; i++)
     {
-        for (int j = 0; j < distanceImage.width; j++)
+        for (int j = 0; j < distance_image.width; j++)
         {
-            int index = i*distanceImage.width + j;
+            int index = i*distance_image.width + j;
 
-            if (std::isnan(calibration[i][j]) && !std::isnan(float(distanceImage.data[index])))
+            if (std::isnan(calibration[i][j]) && !std::isnan(float(distance_image.data[index])))
             {
-                calibration[i][j] = float(distanceImage.data[index]);
-                sampleCountPerPixel[i][j]++;
+                calibration[i][j] = float(distance_image.data[index]);
+                sample_count_per_pixel[i][j]++;
             }
-            else if (!std::isnan(distanceImage.data[index]))
+            else if (!std::isnan(distance_image.data[index]))
             {
-                calibration[i][j] += float(distanceImage.data[index]);
-                sampleCountPerPixel[i][j]++;
+                calibration[i][j] += float(distance_image.data[index]);
+                sample_count_per_pixel[i][j]++;
             }
 
             // if calibration is finished, average over samples
-            if (curCalibrationSample == numCalibrationSamples)
+            if (cur_calibration_sample == num_calibration_samples)
             {
-                calibration[i][j] /= float(sampleCountPerPixel[i][j]);
+                calibration[i][j] /= float(sample_count_per_pixel[i][j]);
             }
         }
     }
-    return curCalibrationSample;
+    return cur_calibration_sample;
 }
