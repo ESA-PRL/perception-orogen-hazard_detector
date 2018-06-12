@@ -33,12 +33,14 @@ bool Task::configureHook()
 
     return true;
 }
+
 bool Task::startHook()
 {
     if (! TaskBase::startHook())
         return false;
     return true;
 }
+
 void Task::updateHook()
 {
     TaskBase::updateHook();
@@ -82,7 +84,6 @@ void Task::updateHook()
                 _local_traversability.write(trav_frame);
             }
 
-            //frame_helper::FrameHelper::copyMatToFrame(res.second, camera_frame);
             camera_frame = cvMatToFrame(visual_image);
             camera_frame.time = cur_time;
             camera_frame.received_time = cur_time;
