@@ -93,9 +93,9 @@ void Task::updateHook()
             if (motion_command.translation > 0)
             {
                 std::vector<uint8_t> trav_map = hazard_detector->getTraversabilityMap();
-                int height = hazard_detector->getTravMapDims();
-                int width  = hazard_detector->getTravMapDims();
-                base::samples::frame::Frame trav_frame(height, width, base::samples::frame::MODE_GRAYSCALE);
+                int height = hazard_detector->getTravMapHeight();
+                int width  = hazard_detector->getTravMapWidth();
+                base::samples::frame::Frame trav_frame(width, height, base::samples::frame::MODE_GRAYSCALE);
                 trav_frame.setImage(trav_map);
                 trav_frame.time = cur_time;
                 trav_frame.received_time = cur_time;
