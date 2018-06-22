@@ -45,34 +45,52 @@ void Task::updateHook()
 {
     TaskBase::updateHook();
 
-    if (_distance_frame.read(distance_image) == RTT::NewData)
+    if (_distance_frame.read(distance_image) != RTT::NewData)
     {
-        _camera_frame.read(camera_frame);
+        return;
+    }
 
-        // do we need to calibrate or can we just load a calibration?
-        if (new_calibration)
+    _camera_frame.read(camera_frame);
+
+    // do we need to calibrate or can we just load a calibration?
+    if (new_calibration)
+    {
+        if (calibrate(distance_image) == num_calibration_samples)
         {
-            if (calibrate(distance_image) == num_calibration_samples)
-            {
-                new_calibration = false;
-                hazard_detector->setCalibration(calibration);
-                hazard_detector->saveCalibrationFile(calibration_path);
-            }
+            new_calibration = false;
+            hazard_detector->setCalibration(calibration);
+            hazard_detector->saveCalibrationFile(calibration_path);
         }
-        else if (!hazard_detector->isCalibrated())
+        return;
+    }
+    else if (!hazard_detector->isCalibrated())
+    {
+        hazard_detector->readCalibrationFile(calibration_path);
+    }
+
+    // calibration is done
+    if (!new_calibration)
+    {
+        std::pair< uint16_t, uint16_t > dist_dims = {distance_image.height, distance_image.width};
+        cv::Mat visual_image = frame_helper::FrameHelper::convertToCvMat(camera_frame);
+        bool obstacle_detected = hazard_detector->analyze(distance_image.data, dist_dims, visual_image);
+
+        base::Time cur_time = base::Time::now();
+
+        camera_frame = cvMatToFrame(visual_image);
+        camera_frame.time = cur_time;
+        camera_frame.received_time = cur_time;
+
+        _hazard_detected.write( obstacle_detected );
+        _hazard_visualization.write( camera_frame );
+
+        if (obstacle_detected)
         {
-            hazard_detector->readCalibrationFile(calibration_path);
-        }
+            // the rover is only allowed to do point turns in the presence of hazards
+            base::commands::Motion2D motion_command;
+            _motion_command.read(motion_command);
 
-        if (!new_calibration)
-        {
-            std::pair< uint16_t, uint16_t > dist_dims = {distance_image.height, distance_image.width};
-            cv::Mat visual_image = frame_helper::FrameHelper::convertToCvMat(camera_frame);
-            bool obstacle_detected = hazard_detector->analyze(distance_image.data, dist_dims, visual_image);
-
-            base::Time cur_time = base::Time::now();
-
-            if (obstacle_detected)
+            if (motion_command.translation > 0)
             {
                 std::vector<uint8_t> trav_map = hazard_detector->getTraversabilityMap();
                 int height = hazard_detector->getTravMapDims();
@@ -83,16 +101,10 @@ void Task::updateHook()
                 trav_frame.received_time = cur_time;
                 _local_traversability.write(trav_frame);
             }
-
-            camera_frame = cvMatToFrame(visual_image);
-            camera_frame.time = cur_time;
-            camera_frame.received_time = cur_time;
-
-            _hazard_detected.write( obstacle_detected );
-            _hazard_visualization.write( camera_frame );
         }
     }
 }
+
 void Task::errorHook()
 {
     TaskBase::errorHook();

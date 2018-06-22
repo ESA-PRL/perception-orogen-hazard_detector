@@ -14,6 +14,7 @@ task_context "Task" do
 
     input_port "distance_frame", "/base/samples/DistanceImage"
     input_port "camera_frame", "/base/samples/frame/Frame"
+    input_port "motion_command", "/base/commands/Motion2D"
 
     output_port "hazard_detected", "bool"
     output_port "hazard_visualization", "/base/samples/frame/Frame"
