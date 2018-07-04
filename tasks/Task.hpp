@@ -48,8 +48,6 @@ namespace hazard_detector {
         void accumulateHazardPixels(std::vector<uint8_t>);
 
         int frame_count_while_stopped = 0;
-        int num_frames_while_stopped = 10;
-        uint8_t hazard_threshold = 7;
 
         std::vector<uint8_t> trav_map;
 

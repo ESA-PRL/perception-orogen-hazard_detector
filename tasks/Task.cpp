@@ -102,7 +102,7 @@ void Task::updateHook()
 
         if (obstacle_detected)
         {
-            if (frame_count_while_stopped < num_frames_while_stopped)
+            if (frame_count_while_stopped < config.num_frames_while_stopped)
             {
                 std::vector<uint8_t> new_trav_map = hazard_detector->getTraversabilityMap();
                 if (frame_count_while_stopped == 0)
@@ -206,7 +206,7 @@ void Task::writeThresholdedTraversabilityMap(const base::Time& cur_time)
     base::samples::frame::Frame trav_frame(width, height, base::samples::frame::MODE_GRAYSCALE);
 
     std::transform(trav_map.begin(), trav_map.end(), trav_map.begin(),
-            [&](uint8_t x){return x >= hazard_threshold ? hazard_detector->getValueForHazard() : hazard_detector->getValueForTraversable();});
+            [&](uint8_t x){return x >= config.hazard_threshold ? hazard_detector->getValueForHazard() : hazard_detector->getValueForTraversable();});
 
     trav_frame.setImage(trav_map);
     trav_frame.time = cur_time;
