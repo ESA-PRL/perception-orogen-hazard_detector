@@ -26,10 +26,10 @@ bool Task::configureHook()
 
     hazard_detector = new HazardDetector(config);
 
-    calibration_path = config.calibrationPath;
-    num_calibration_samples = config.numCalibrationSamples;
+    calibration_path = config.calibration_path;
+    num_calibration_samples = config.num_calibration_samples;
     cur_calibration_sample = 0;
-    new_calibration = config.newCalibration;
+    new_calibration = config.new_calibration;
 
     frame_count_while_stopped = 0;
 
@@ -107,7 +107,7 @@ void Task::updateHook()
                 std::vector<uint8_t> new_trav_map = hazard_detector->getTraversabilityMap();
                 if (frame_count_while_stopped == 0)
                 {
-                    trav_map.resize(new_trav_map.size(), hazard_detector->TRAVERSABLE);
+                    trav_map.resize(new_trav_map.size(), hazard_detector->getValueForTraversable());
                 }
                 accumulateHazardPixels(new_trav_map);
                 frame_count_while_stopped++;
@@ -193,7 +193,7 @@ int Task::calibrate(const base::samples::DistanceImage &distance_image)
 void Task::accumulateHazardPixels(std::vector<uint8_t> new_trav_map)
 {
     std::transform(new_trav_map.begin(), new_trav_map.end(), new_trav_map.begin(),
-    std::bind(std::divides<uint8_t>(), std::placeholders::_1, hazard_detector->HAZARD));
+    std::bind(std::divides<uint8_t>(), std::placeholders::_1, hazard_detector->getValueForHazard()));
     std::transform(new_trav_map.begin(), new_trav_map.end(), trav_map.begin(), trav_map.begin(),
     std::plus<uint8_t>());
 }
@@ -206,7 +206,7 @@ void Task::writeThresholdedTraversabilityMap(const base::Time& cur_time)
     base::samples::frame::Frame trav_frame(width, height, base::samples::frame::MODE_GRAYSCALE);
 
     std::transform(trav_map.begin(), trav_map.end(), trav_map.begin(),
-            [&](uint8_t x){return x >= hazard_threshold ? hazard_detector->HAZARD : hazard_detector->TRAVERSABLE;});
+            [&](uint8_t x){return x >= hazard_threshold ? hazard_detector->getValueForHazard() : hazard_detector->getValueForTraversable();});
 
     trav_frame.setImage(trav_map);
     trav_frame.time = cur_time;
