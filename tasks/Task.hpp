@@ -7,6 +7,8 @@
 #include "hazard_detector/TaskBase.hpp"
 #include "frame_helper/FrameHelper.h"
 #include <opencv2/core/mat.hpp>
+#include <algorithm>
+#include <functional>
 #include <hazard_detector/HazardDetector.hpp>
 
 namespace hazard_detector {
@@ -41,6 +43,15 @@ namespace hazard_detector {
         bool new_calibration;
         std::vector< std::vector<int> > sample_count_per_pixel;
         std::vector< std::vector<float> > calibration;
+
+        void writeThresholdedTraversabilityMap(const base::Time&);
+        void accumulateHazardPixels(std::vector<uint8_t>);
+
+        int frame_count_while_stopped = 0;
+        int num_frames_while_stopped = 10;
+        uint8_t hazard_threshold = 7;
+
+        std::vector<uint8_t> trav_map;
 
     public:
         Task(std::string const& name = "hazard_detector::Task");

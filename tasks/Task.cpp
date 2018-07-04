@@ -31,6 +31,8 @@ bool Task::configureHook()
     cur_calibration_sample = 0;
     new_calibration = config.newCalibration;
 
+    frame_count_while_stopped = 0;
+
     return true;
 }
 
@@ -81,25 +83,39 @@ void Task::updateHook()
         camera_frame.time = cur_time;
         camera_frame.received_time = cur_time;
 
-        _hazard_detected.write( obstacle_detected );
-        _hazard_visualization.write( camera_frame );
+        _hazard_visualization.write(camera_frame);
+
+        // the rover is only allowed to do point turns in the presence of hazards
+        base::commands::Motion2D motion_command;
+        _motion_command.read(motion_command);
+
+        if (motion_command.translation == 0 && motion_command.rotation != 0)
+        {
+            return;
+        }
+        else if (motion_command.translation > 0)
+        {
+            frame_count_while_stopped = 0;
+        }
+
+        _hazard_detected.write(obstacle_detected);
 
         if (obstacle_detected)
         {
-            // the rover is only allowed to do point turns in the presence of hazards
-            base::commands::Motion2D motion_command;
-            _motion_command.read(motion_command);
-
-            if (motion_command.translation > 0)
+            if (frame_count_while_stopped < num_frames_while_stopped)
             {
-                std::vector<uint8_t> trav_map = hazard_detector->getTraversabilityMap();
-                int height = hazard_detector->getTravMapHeight();
-                int width  = hazard_detector->getTravMapWidth();
-                base::samples::frame::Frame trav_frame(width, height, base::samples::frame::MODE_GRAYSCALE);
-                trav_frame.setImage(trav_map);
-                trav_frame.time = cur_time;
-                trav_frame.received_time = cur_time;
-                _local_traversability.write(trav_frame);
+                std::vector<uint8_t> new_trav_map = hazard_detector->getTraversabilityMap();
+                if (frame_count_while_stopped == 0)
+                {
+                    trav_map.resize(new_trav_map.size(), hazard_detector->TRAVERSABLE);
+                }
+                accumulateHazardPixels(new_trav_map);
+                frame_count_while_stopped++;
+            }
+            else
+            {
+                writeThresholdedTraversabilityMap(cur_time);
+                frame_count_while_stopped = 0;
             }
         }
     }
@@ -172,4 +188,28 @@ int Task::calibrate(const base::samples::DistanceImage &distance_image)
         }
     }
     return cur_calibration_sample;
+}
+
+void Task::accumulateHazardPixels(std::vector<uint8_t> new_trav_map)
+{
+    std::transform(new_trav_map.begin(), new_trav_map.end(), new_trav_map.begin(),
+    std::bind(std::divides<uint8_t>(), std::placeholders::_1, hazard_detector->HAZARD));
+    std::transform(new_trav_map.begin(), new_trav_map.end(), trav_map.begin(), trav_map.begin(),
+    std::plus<uint8_t>());
+}
+
+void Task::writeThresholdedTraversabilityMap(const base::Time& cur_time)
+{
+    std::vector<uint8_t> trav_map = hazard_detector->getTraversabilityMap();
+    int height = hazard_detector->getTravMapHeight();
+    int width  = hazard_detector->getTravMapWidth();
+    base::samples::frame::Frame trav_frame(width, height, base::samples::frame::MODE_GRAYSCALE);
+
+    std::transform(trav_map.begin(), trav_map.end(), trav_map.begin(),
+            [&](uint8_t x){return x >= hazard_threshold ? hazard_detector->HAZARD : hazard_detector->TRAVERSABLE;});
+
+    trav_frame.setImage(trav_map);
+    trav_frame.time = cur_time;
+    trav_frame.received_time = cur_time;
+    _local_traversability.write(trav_frame);
 }
