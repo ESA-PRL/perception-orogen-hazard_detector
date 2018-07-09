@@ -44,8 +44,12 @@ namespace hazard_detector {
         std::vector< std::vector<int> > sample_count_per_pixel;
         std::vector< std::vector<float> > calibration;
 
+        // For consecutive input traversability maps, sum up how many times each pixel
+        // was considered a hazard.
+        // The result is saved in the global trav_map.
+        void accumulateHazardPixels(std::vector<uint8_t> new_trav_map);
+
         void writeThresholdedTraversabilityMap(const base::Time&);
-        void accumulateHazardPixels(std::vector<uint8_t>);
 
         int frame_count_while_stopped = 0;
 

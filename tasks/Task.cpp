@@ -192,24 +192,28 @@ int Task::calibrate(const base::samples::DistanceImage &distance_image)
 
 void Task::accumulateHazardPixels(std::vector<uint8_t> new_trav_map)
 {
+    // hazards are represented as value HAZARD (e.g., 255)
+    // so we first divide each entry by HAZARD ...
     std::transform(new_trav_map.begin(), new_trav_map.end(), new_trav_map.begin(),
-    std::bind(std::divides<uint8_t>(), std::placeholders::_1, hazard_detector->getValueForHazard()));
+        std::bind(std::divides<uint8_t>(), std::placeholders::_1, hazard_detector->getValueForHazard()));
+    // ... before summing them up with the existing counters.
     std::transform(new_trav_map.begin(), new_trav_map.end(), trav_map.begin(), trav_map.begin(),
-    std::plus<uint8_t>());
+        std::plus<uint8_t>());
 }
 
 void Task::writeThresholdedTraversabilityMap(const base::Time& cur_time)
 {
-    std::vector<uint8_t> trav_map = hazard_detector->getTraversabilityMap();
+    // thresholding
+    std::transform(trav_map.begin(), trav_map.end(), trav_map.begin(),
+        [&](uint8_t x){return x >= config.hazard_threshold ? hazard_detector->getValueForHazard() : hazard_detector->getValueForTraversable();});
+
     int height = hazard_detector->getTravMapHeight();
     int width  = hazard_detector->getTravMapWidth();
     base::samples::frame::Frame trav_frame(width, height, base::samples::frame::MODE_GRAYSCALE);
 
-    std::transform(trav_map.begin(), trav_map.end(), trav_map.begin(),
-            [&](uint8_t x){return x >= config.hazard_threshold ? hazard_detector->getValueForHazard() : hazard_detector->getValueForTraversable();});
-
     trav_frame.setImage(trav_map);
     trav_frame.time = cur_time;
     trav_frame.received_time = cur_time;
+
     _local_traversability.write(trav_frame);
 }
