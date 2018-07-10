@@ -1,21 +1,41 @@
 #ifndef HAZARD_DETECTOR_TASK_TASK_HPP
 #define HAZARD_DETECTOR_TASK_TASK_HPP
 
-#include <iostream>
-#include <fstream>
 #include <math.h>
-#include "hazard_detector/TaskBase.hpp"
-#include "frame_helper/FrameHelper.h"
-#include <opencv2/core/mat.hpp>
+#include <fstream>
+#include <iostream>
+#include <vector>
 #include <algorithm>
 #include <functional>
+#include <string>
+
+#include <opencv2/core/mat.hpp>
+
+#include "hazard_detector/TaskBase.hpp"
+#include "frame_helper/FrameHelper.h"
+
 #include <hazard_detector/HazardDetector.hpp>
 
-namespace hazard_detector {
+namespace hazard_detector
+{
 
-    class Task : public TaskBase
-    {
+class Task : public TaskBase
+{
     friend class TaskBase;
+
+    public:
+        Task(std::string const& name = "hazard_detector::Task");
+        Task(std::string const& name, RTT::ExecutionEngine* engine);
+
+        ~Task();
+
+        bool configureHook();
+        bool startHook();
+        void updateHook();
+        void errorHook();
+        void stopHook();
+        void cleanupHook();
+
     protected:
         HazardDetector* hazard_detector;
 
@@ -44,8 +64,8 @@ namespace hazard_detector {
         std::vector< std::vector<int> > sample_count_per_pixel;
         std::vector< std::vector<float> > calibration;
 
-        // For consecutive input traversability maps, sum up how many times each pixel
-        // was considered a hazard.
+        // For consecutive input traversability maps,
+        // sum up how many times each pixel was considered a hazard.
         // The result is saved in the global trav_map.
         void accumulateHazardPixels(std::vector<uint8_t> new_trav_map);
 
@@ -54,20 +74,8 @@ namespace hazard_detector {
         int frame_count_while_stopped = 0;
 
         std::vector<uint8_t> trav_map;
+};
 
-    public:
-        Task(std::string const& name = "hazard_detector::Task");
-        Task(std::string const& name, RTT::ExecutionEngine* engine);
-
-        ~Task();
-
-        bool configureHook();
-        bool startHook();
-        void updateHook();
-        void errorHook();
-        void stopHook();
-        void cleanupHook();
-    };
-}
+}  // namespace hazard_detector
 
 #endif

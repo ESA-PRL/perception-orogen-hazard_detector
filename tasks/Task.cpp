@@ -1,6 +1,7 @@
 #include "Task.hpp"
 
-using namespace hazard_detector;
+namespace hazard_detector
+{
 
 Task::Task(std::string const& name)
     : TaskBase(name)
@@ -19,7 +20,7 @@ Task::~Task()
 
 bool Task::configureHook()
 {
-    if (! TaskBase::configureHook())
+    if (!TaskBase::configureHook())
         return false;
 
     this->config = _config.get();
@@ -38,7 +39,7 @@ bool Task::configureHook()
 
 bool Task::startHook()
 {
-    if (! TaskBase::startHook())
+    if (!TaskBase::startHook())
         return false;
     return true;
 }
@@ -73,7 +74,7 @@ void Task::updateHook()
     // calibration is done
     if (!new_calibration)
     {
-        std::pair< uint16_t, uint16_t > dist_dims = {distance_image.height, distance_image.width};
+        std::pair<uint16_t, uint16_t> dist_dims = {distance_image.height, distance_image.width};
         cv::Mat visual_image = frame_helper::FrameHelper::convertToCvMat(camera_frame);
         bool obstacle_detected = hazard_detector->analyze(distance_image.data, dist_dims, visual_image);
 
@@ -85,7 +86,8 @@ void Task::updateHook()
 
         _hazard_visualization.write(camera_frame);
 
-        // the rover is only allowed to do point turns in the presence of hazards
+        // the rover is (only) allowed to do point turns
+        // in the presence of hazards
         base::commands::Motion2D motion_command;
         _motion_command.read(motion_command);
 
@@ -141,13 +143,13 @@ base::samples::frame::Frame Task::cvMatToFrame(cv::Mat cvmat)
 
     base::samples::frame::Frame frame(
             cvmat.rows, cvmat.cols, 8,
-            base::samples::frame::MODE_GRAYSCALE );
+            base::samples::frame::MODE_GRAYSCALE);
     frame_helper::FrameHelper::copyMatToFrame(cvmat, frame);
 
     return frame;
 }
 
-int Task::calibrate(const base::samples::DistanceImage &distance_image)
+int Task::calibrate(const base::samples::DistanceImage& distance_image)
 {
     cur_calibration_sample++;
 
@@ -167,23 +169,24 @@ int Task::calibrate(const base::samples::DistanceImage &distance_image)
     {
         for (int j = 0; j < distance_image.width; j++)
         {
-            int index = i*distance_image.width + j;
+            int index = i * distance_image.width + j;
+            float distance = static_cast<float>(distance_image.data[index]);
 
-            if (std::isnan(calibration[i][j]) && !std::isnan(float(distance_image.data[index])))
+            if (std::isnan(calibration[i][j]) && !std::isnan(distance))
             {
-                calibration[i][j] = float(distance_image.data[index]);
+                calibration[i][j] = distance;
                 sample_count_per_pixel[i][j]++;
             }
-            else if (!std::isnan(distance_image.data[index]))
+            else if (!std::isnan(distance))
             {
-                calibration[i][j] += float(distance_image.data[index]);
+                calibration[i][j] += distance;
                 sample_count_per_pixel[i][j]++;
             }
 
             // if calibration is finished, average over samples
             if (cur_calibration_sample == num_calibration_samples)
             {
-                calibration[i][j] /= float(sample_count_per_pixel[i][j]);
+                calibration[i][j] /= static_cast<float>(sample_count_per_pixel[i][j]);
             }
         }
     }
@@ -217,3 +220,5 @@ void Task::writeThresholdedTraversabilityMap(const base::Time& cur_time)
 
     _local_traversability.write(trav_frame);
 }
+
+}  // namespace hazard_detector
