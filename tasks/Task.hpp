@@ -9,7 +9,7 @@
 #include <functional>
 #include <string>
 
-#include <opencv2/core/mat.hpp>
+#include <opencv2/core/core.hpp>
 
 #include "hazard_detector/TaskBase.hpp"
 #include "frame_helper/FrameHelper.h"
