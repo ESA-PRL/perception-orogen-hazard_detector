@@ -71,9 +71,17 @@ class Task : public TaskBase
 
         void writeThresholdedTraversabilityMap(const base::Time&);
 
-        int frame_count_while_stopped = 0;
+        int frame_count_while_stopped;
 
         std::vector<uint8_t> trav_map;
+
+        // Ignore part of the RoI for this number of iterations.
+        int timer;
+
+        // Initializes the timer used to ignore part of the RoI
+        // and decides which part to ignore (left or right)
+        // depending on the rotation of the commanded Ackermann.
+        void trustAvoidanceManeuver(const base::commands::Motion2D&);
 };
 
 }  // namespace hazard_detector

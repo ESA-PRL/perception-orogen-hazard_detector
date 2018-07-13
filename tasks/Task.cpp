@@ -33,6 +33,7 @@ bool Task::configureHook()
     new_calibration = config.new_calibration;
 
     frame_count_while_stopped = 0;
+    timer = 0;
 
     return true;
 }
@@ -48,6 +49,28 @@ void Task::updateHook()
 {
     TaskBase::updateHook();
 
+    if (state() == WAITING_FOR_NEW_PLAN)
+    {
+        bool new_plan = false;
+        if (_new_plan.read(new_plan) != RTT::NewData ||
+            new_plan == false)
+        {
+            return;
+        }
+
+        base::commands::Motion2D command;
+        _motion_command.read(command);
+        if (command.translation == 0 && command.rotation != 0)
+        {
+            state(RUNNING);
+        }
+        else if (command.translation > 0)
+        {
+            trustAvoidanceManeuver(command);
+            state(AVOIDANCE_VIA_ACKERMANN);
+        }
+    }
+
     if (_distance_frame.read(distance_image) != RTT::NewData)
     {
         return;
@@ -58,17 +81,20 @@ void Task::updateHook()
     // do we need to calibrate or can we just load a calibration?
     if (new_calibration)
     {
+        state(CALIBRATING);
         if (calibrate(distance_image) == num_calibration_samples)
         {
-            new_calibration = false;
             hazard_detector->setCalibration(calibration);
             hazard_detector->saveCalibrationFile(calibration_path);
+            new_calibration = false;
+            state(RUNNING);
         }
         return;
     }
     else if (!hazard_detector->isCalibrated())
     {
         hazard_detector->readCalibrationFile(calibration_path);
+        state(RUNNING);
     }
 
     // calibration is done
@@ -86,39 +112,68 @@ void Task::updateHook()
 
         _hazard_visualization.write(camera_frame);
 
-        // the rover is (only) allowed to do point turns
-        // in the presence of hazards
+        // the rover is always allowed to perform point turns
+        // and it may also perform an ackermann away from
+        // a formerly detected hazard, ignoring that side of its
+        // roi for a certain time
         base::commands::Motion2D motion_command;
         _motion_command.read(motion_command);
 
-        if (motion_command.translation == 0 && motion_command.rotation != 0)
+        // (ackermann while) partially blind
+        if (state() == AVOIDANCE_VIA_ACKERMANN &&
+            timer > 0)
         {
+            _hazard_detected.write(false);
+
+            timer--;
+            if (timer == 0)
+            {
+                hazard_detector->ignoreNothing();
+                state(RUNNING);
+            }
             return;
         }
-        else if (motion_command.translation > 0)
+
+        // point turn
+        if (motion_command.translation == 0 &&
+            motion_command.rotation != 0)
+        {
+            _hazard_detected.write(false);
+            return;
+        }
+
+        // normal driving: reset counter
+        if (motion_command.translation > 0)
         {
             frame_count_while_stopped = 0;
         }
 
         _hazard_detected.write(obstacle_detected);
 
-        if (obstacle_detected)
+        if (!obstacle_detected)
         {
-            if (frame_count_while_stopped < config.num_frames_while_stopped)
+            return;
+        }
+
+        if (frame_count_while_stopped < config.num_frames_while_stopped)
+        {
+            state(FILTERING);
+            std::vector<uint8_t> new_trav_map = hazard_detector->getTraversabilityMap();
+            if (frame_count_while_stopped == 0)
             {
-                std::vector<uint8_t> new_trav_map = hazard_detector->getTraversabilityMap();
-                if (frame_count_while_stopped == 0)
-                {
-                    trav_map.resize(new_trav_map.size(), hazard_detector->getValueForTraversable());
-                }
-                accumulateHazardPixels(new_trav_map);
-                frame_count_while_stopped++;
+                trav_map.resize(new_trav_map.size(), hazard_detector->getValueForTraversable());
             }
-            else
+            accumulateHazardPixels(new_trav_map);
+            frame_count_while_stopped++;
+        }
+        else
+        {
+            if (_new_plan.connected())
             {
-                writeThresholdedTraversabilityMap(cur_time);
-                frame_count_while_stopped = 0;
+                state(WAITING_FOR_NEW_PLAN);
             }
+            writeThresholdedTraversabilityMap(cur_time);
+            frame_count_while_stopped = 0;
         }
     }
 }
@@ -219,6 +274,24 @@ void Task::writeThresholdedTraversabilityMap(const base::Time& cur_time)
     trav_frame.received_time = cur_time;
 
     _local_traversability.write(trav_frame);
+}
+
+void Task::trustAvoidanceManeuver(const base::commands::Motion2D& command)
+{
+    if (command.rotation > 0)
+    {
+        hazard_detector->ignoreRightSide();
+    }
+    else if (command.rotation < 0)
+    {
+        hazard_detector->ignoreLeftSide();
+    }
+    else
+    {
+        //TODO What now?
+        state(EXCEPTION);
+    }
+    timer = 20; //TODO derive from command
 }
 
 }  // namespace hazard_detector
