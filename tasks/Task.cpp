@@ -152,6 +152,7 @@ void Task::updateHook()
 
         if (!obstacle_detected)
         {
+            state(RUNNING);
             return;
         }
 
@@ -171,6 +172,10 @@ void Task::updateHook()
             if (_new_plan.connected())
             {
                 state(WAITING_FOR_NEW_PLAN);
+            }
+            else
+            {
+                state(RUNNING);
             }
             writeThresholdedTraversabilityMap(cur_time);
             frame_count_while_stopped = 0;
