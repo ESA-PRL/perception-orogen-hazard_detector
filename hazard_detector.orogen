@@ -8,8 +8,18 @@ import_types_from "base"
 task_context "Task" do
     needs_configuration
 
-    property "config", "hazard_detector/Config"
-    property "avoidance_timer", "int", 30
+    property("lib_config", "hazard_detector/Config").doc("")
+    property("avoidance_timer", "int", 30).doc("")
+    property("new_calibration", "bool", false).doc("")
+    property("num_calibration_samples", "int", 20).doc("")
+    property("calibration_path", "string").doc("")
+    property("num_frames_while_stopped", "int", 10)
+        .doc("Number of frames to be taken into account when trying to filter
+             out false positives")
+    property("hazard_threshold", "uint8_t", 7)
+        .doc("Out of num_frames_while_stopped many frames, a pixel has to be
+             considered too far/close for at least hazard_threshold many times
+             to be classified as an actual hazard.")
 
     input_port "distance_frame", "/base/samples/DistanceImage"
     input_port "camera_frame", "/base/samples/frame/Frame"

@@ -23,14 +23,10 @@ bool Task::configureHook()
     if (!TaskBase::configureHook())
         return false;
 
-    this->config = _config.get();
+    hazard_detector = new HazardDetector(_lib_config.get());
 
-    hazard_detector = new HazardDetector(config);
-
-    calibration_path = config.calibration_path;
-    num_calibration_samples = config.num_calibration_samples;
     cur_calibration_sample = 0;
-    new_calibration = config.new_calibration;
+    new_calibration = _new_calibration.value();
 
     frame_count_while_stopped = 0;
     timer = 0;
@@ -73,10 +69,10 @@ void Task::updateHook()
     if (new_calibration)
     {
         state(CALIBRATING);
-        if (calibrate(distance_image) == num_calibration_samples)
+        if (calibrate(distance_image) == _num_calibration_samples.value())
         {
             hazard_detector->setCalibration(calibration);
-            hazard_detector->saveCalibrationFile(calibration_path);
+            hazard_detector->saveCalibrationFile(_calibration_path.value());
             new_calibration = false;
             state(RUNNING);
         }
@@ -84,7 +80,7 @@ void Task::updateHook()
     }
     else if (!hazard_detector->isCalibrated())
     {
-        hazard_detector->readCalibrationFile(calibration_path);
+        hazard_detector->readCalibrationFile(_calibration_path.value());
         state(RUNNING);
     }
 
@@ -148,7 +144,7 @@ void Task::updateHook()
             return;
         }
 
-        if (frame_count_while_stopped < config.num_frames_while_stopped)
+        if (frame_count_while_stopped < _num_frames_while_stopped.value())
         {
             state(FILTERING);
             std::vector<uint8_t> new_trav_map = hazard_detector->getTraversabilityMap();
@@ -236,7 +232,7 @@ int Task::calibrate(const base::samples::DistanceImage& distance_image)
             }
 
             // if calibration is finished, average over samples
-            if (cur_calibration_sample == num_calibration_samples)
+            if (cur_calibration_sample == _num_calibration_samples.value())
             {
                 calibration[i][j] /= static_cast<float>(sample_count_per_pixel[i][j]);
             }
@@ -260,7 +256,7 @@ void Task::writeThresholdedTraversabilityMap(const base::Time& cur_time)
 {
     // thresholding
     std::transform(trav_map.begin(), trav_map.end(), trav_map.begin(),
-        [&](uint8_t x){return x >= config.hazard_threshold ? hazard_detector->getValueForHazard() : hazard_detector->getValueForTraversable();});
+        [&](uint8_t x){return x >= _hazard_threshold.value() ? hazard_detector->getValueForHazard() : hazard_detector->getValueForTraversable();});
 
     int height = hazard_detector->getTravMapHeight();
     int width  = hazard_detector->getTravMapWidth();
