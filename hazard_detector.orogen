@@ -9,6 +9,7 @@ task_context "Task" do
     needs_configuration
 
     property "config", "hazard_detector/Config"
+    property "avoidance_timer", "int", 30
 
     input_port "distance_frame", "/base/samples/DistanceImage"
     input_port "camera_frame", "/base/samples/frame/Frame"
@@ -19,7 +20,7 @@ task_context "Task" do
     output_port "hazard_visualization", "/base/samples/frame/Frame"
     output_port "local_traversability", "/base/samples/frame/Frame"
 
-    runtime_states :CALIBRATING, :FILTERING, :WAITING_FOR_NEW_PLAN, :AVOIDANCE_VIA_ACKERMANN
+    runtime_states :CALIBRATING, :FILTERING, :WAITING_FOR_NEW_PLAN, :AVOIDANCE_MANEUVER
 
     port_driven "camera_frame"
 end

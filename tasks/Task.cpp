@@ -58,17 +58,8 @@ void Task::updateHook()
             return;
         }
 
-        base::commands::Motion2D command;
-        _motion_command.read(command);
-        if (command.translation == 0 && command.rotation != 0)
-        {
-            state(RUNNING);
-        }
-        else if (command.translation > 0)
-        {
-            trustAvoidanceManeuver(command);
-            state(AVOIDANCE_VIA_ACKERMANN);
-        }
+        timer = _avoidance_timer.value();
+        state(AVOIDANCE_MANEUVER);
     }
 
     if (_distance_frame.read(distance_image) != RTT::NewData)
@@ -120,12 +111,13 @@ void Task::updateHook()
         _motion_command.read(motion_command);
 
         // (ackermann while) partially blind
-        if (state() == AVOIDANCE_VIA_ACKERMANN &&
+        if (state() == AVOIDANCE_MANEUVER &&
             timer > 0)
         {
             _hazard_detected.write(false);
+            trustAvoidanceManeuver(motion_command);
 
-            timer--;
+
             if (timer == 0)
             {
                 hazard_detector->ignoreNothing();
@@ -283,20 +275,32 @@ void Task::writeThresholdedTraversabilityMap(const base::Time& cur_time)
 
 void Task::trustAvoidanceManeuver(const base::commands::Motion2D& command)
 {
+    // Once we started to count down the timer, i.e. started the avoidance
+    // maneuver, we do not want to update which part of the RoI to ignore.
+    if (timer < _avoidance_timer.value())
+    {
+        timer--;
+        return;
+    }
+
+    // Turning left
     if (command.rotation > 0)
     {
         hazard_detector->ignoreRightSide();
+        timer--;
     }
+    // Turning right
     else if (command.rotation < 0)
     {
         hazard_detector->ignoreLeftSide();
+        timer--;
     }
-    else
+    // Hazard detected in front, but we just keep driving straight.
+    // If this happens, something went wrong somewhere else.
+    else if (command.translation > 0)
     {
-        //TODO What now?
         state(EXCEPTION);
     }
-    timer = 20; //TODO derive from command
 }
 
 }  // namespace hazard_detector
