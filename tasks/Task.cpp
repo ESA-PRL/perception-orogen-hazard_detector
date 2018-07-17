@@ -150,6 +150,7 @@ void Task::updateHook()
             std::vector<uint8_t> new_trav_map = hazard_detector->getTraversabilityMap();
             if (frame_count_while_stopped == 0)
             {
+                trav_map.clear();
                 trav_map.resize(new_trav_map.size(), hazard_detector->getValueForTraversable());
             }
             accumulateHazardPixels(new_trav_map);
