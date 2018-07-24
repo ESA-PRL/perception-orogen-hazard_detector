@@ -73,6 +73,7 @@ void Task::updateHook()
         {
             hazard_detector->setCalibration(calibration);
             hazard_detector->saveCalibrationFile(_calibration_path.value());
+            hazard_detector->computeTolerances();
             new_calibration = false;
             state(RUNNING);
         }
@@ -81,6 +82,7 @@ void Task::updateHook()
     else if (!hazard_detector->isCalibrated())
     {
         hazard_detector->readCalibrationFile(_calibration_path.value());
+        hazard_detector->computeTolerances();
         state(RUNNING);
     }
 
