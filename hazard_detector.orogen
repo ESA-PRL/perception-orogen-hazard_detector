@@ -1,34 +1,77 @@
 name "hazard_detector"
 
-using_library "hazard_detector"
 using_library "frame_helper"
-import_types_from "hazard_detector/Config.hpp"
+using_library "hazard_detector"
+
 import_types_from "base"
+import_types_from "hazard_detector/Config.hpp"
 
 task_context "Task" do
+    doc("Detects hazards based only on stereo distance calculations.").
+
     needs_configuration
 
-    property("lib_config", "hazard_detector/Config").doc("")
-    property("avoidance_timer", "int", 30).doc("")
-    property("new_calibration", "bool", false).doc("")
-    property("num_calibration_samples", "int", 20).doc("")
-    property("calibration_path", "string").doc("")
+    property("lib_config", "hazard_detector/Config")
+        .doc("Structure containing all configuration parameters of the library.")
+
+    property("avoidance_timer", "int", 30)
+        .doc("When an avoidance maneuver is initiated, a count-down starts
+             from avoidance_timer's value, allowing the rover to perform
+             (Ackermann) maneuvers in the presence of hazards as long as the
+             timer does not reach zero.
+             The countdown decrements by one in each call to updateHook.")
+
+    property("new_calibration", "bool", false)
+        .doc("If false, an existing calibration matrix file is expected
+             (see calibration_path).
+             Otherwise, a new calibration matrix will be computed.")
+
+    property("num_calibration_samples", "int", 20)
+        .doc("Average over this many samples when computing the calibration matrix.")
+
+    property("calibration_path", "string")
+        .doc("Path to the file containing the calibration matrix.
+             If new_calibration is true, the file will be newly created.")
+
     property("num_frames_while_stopped", "int", 10)
         .doc("Number of frames to be taken into account when trying to filter
              out false positives")
+
     property("hazard_threshold", "uint8_t", 7)
         .doc("Out of num_frames_while_stopped many frames, a pixel has to be
              considered too far/close for at least hazard_threshold many times
              to be classified as an actual hazard.")
 
-    input_port "distance_frame", "/base/samples/DistanceImage"
-    input_port "camera_frame", "/base/samples/frame/Frame"
-    input_port "motion_command", "/base/commands/Motion2D"
-    input_port "new_plan", "bool"
+    input_port("distance_frame", "/base/samples/DistanceImage")
+        .doc("The distances computed by a stereo component.")
 
-    output_port "hazard_detected", "bool"
-    output_port "hazard_visualization", "/base/samples/frame/Frame"
-    output_port "local_traversability", "/base/samples/frame/Frame"
+    input_port("camera_frame", "/base/samples/frame/Frame")
+        .doc("Used for visualization.")
+
+    input_port("motion_command", "/base/commands/Motion2D")
+        .doc("Allows to monitor the current motion command.
+             This is used to decide which part of the distance images
+             can safely be ignored during an Ackermann maneuver.")
+
+    input_port("new_plan", "bool")
+        .doc("Signals whether a new plan was computed (to evade a hazard).")
+
+    output_port("hazard_detected", "bool")
+        .doc("Signals when a hazard was detected and also when the hazard is
+             no longer detected.")
+
+    output_port("hazard_visualization", "/base/samples/frame/Frame")
+        .doc("This frame visualizes the most important aspects of
+             the hazard detector. A green overlay shows the region of interest,
+             red pixels are hazards because the distances are too small,
+             blue pixels are hazards because the distances are too big.
+             No overlay means that the pixels are out of the region of interest
+             or that no disparity could be computed for the respective pixels.")
+
+    output_port("local_traversability", "/base/samples/frame/Frame")
+        .doc("The local traversability map is rover centric and oriented
+             in such a way, that the upper part of the map lies in front of the
+             rover and the left side of the map is to the left of the rover.")
 
     runtime_states :CALIBRATING, :FILTERING, :WAITING_FOR_NEW_PLAN, :AVOIDANCE_MANEUVER
 

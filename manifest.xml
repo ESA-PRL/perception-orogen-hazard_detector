@@ -1,6 +1,6 @@
 <package>
-  <description brief="Detects hazards/obstacles in a distance frame using the library hazard_detector">
-  
+  <description brief="Detects hazards in a distance frame using the library hazard_detector">
+      Detects hazards in a distance frame using the library perception/hazard_detector.
   </description>
   <author>Levin Gerdes/levin.gerdes@esa.int</author>
   <license></license>
@@ -10,4 +10,6 @@
   <depend package="opencv" />
   <depend package="perception/frame_helper" />
   <depend package="perception/hazard_detector" />
+
+  <tags>needs_opt</tags>
 </package>
