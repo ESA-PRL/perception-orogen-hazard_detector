@@ -17,3 +17,5 @@ cmake_minimum_required(VERSION 2.6)
 
 SET (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/.orogen/config")
 INCLUDE(hazard_detectorBase)
+
+set (CMAKE_BUILD_TYPE RelWithDebInfo)

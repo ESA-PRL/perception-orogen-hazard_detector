@@ -31,6 +31,9 @@ bool Task::configureHook()
     frame_count_while_stopped = 0;
     timer = 0;
 
+    time_file.open("computation_time_hazard_detector.txt");
+    t_init = base::Time::now();
+
     return true;
 }
 
@@ -81,8 +84,14 @@ void Task::updateHook()
     }
     else if (!hazard_detector->isCalibrated())
     {
+        base::Time t_start = base::Time::now();
         hazard_detector->readCalibrationFile(_calibration_path.value());
+        computation_time = base::Time::now() - t_start;
+        time_file << "Calibration. Reading calibration file: " << computation_time.toSeconds() << std::endl;
+        t_start = base::Time::now();
         hazard_detector->computeTolerances();
+        computation_time = base::Time::now() - t_start;
+        time_file << "Calibration. Computing tolerances: " << computation_time.toSeconds() << std::endl;
         state(RUNNING);
     }
 
@@ -91,7 +100,10 @@ void Task::updateHook()
     {
         std::pair<uint16_t, uint16_t> dist_dims = {distance_image.height, distance_image.width};
         cv::Mat visual_image = frame_helper::FrameHelper::convertToCvMat(camera_frame);
+        base::Time t_start = base::Time::now();
         bool obstacle_detected = hazard_detector->analyze(distance_image.data, dist_dims, visual_image);
+        computation_time = base::Time::now() - t_start;
+        time_file << "analyze() took: " << computation_time.toSeconds() << "\t started at " << (t_start - t_init).toSeconds() << std::endl;
 
         base::Time cur_time = base::Time::now();
 
@@ -181,6 +193,7 @@ void Task::errorHook()
 void Task::stopHook()
 {
     TaskBase::stopHook();
+    time_file.close();
 }
 void Task::cleanupHook()
 {

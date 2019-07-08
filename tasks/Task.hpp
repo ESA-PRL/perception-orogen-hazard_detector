@@ -37,6 +37,9 @@ class Task : public TaskBase
         void cleanupHook();
 
     protected:
+        base::Time computation_time;
+        base::Time t_init;
+        std::ofstream time_file;
         HazardDetector* hazard_detector;
 
         // used to compute location of hazards
