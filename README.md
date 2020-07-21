@@ -12,4 +12,4 @@ From this, we compute a local traversability map in the rover frame. White pixel
 ![local_traversability](media/local_traversability.png)
 
 
-This config file lists all available configuration options: https://github.com/hdpr-rover/bundles-hdpr/blob/rock_master/config/orogen/hazard_detector::Task.yml
+This config file lists all available configuration options: https://github.com/esa-prl/bundles-rover/blob/master/config/orogen/hazard_detector::Task.yml
